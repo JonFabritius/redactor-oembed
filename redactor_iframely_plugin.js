@@ -30,13 +30,34 @@ RedactorPlugins.iframely = function() {
                     if (!text) {
                         return;
                     }
-                    var m = text.match(urlRe);
-                    if (m) {
+
+                    var links = [];
+                    var texts = false;
+                    that.iframely.walkTheDOM(prev, function(node) {
+                        if (node.nodeName.toLowerCase() === 'a') {
+                            links.push(node.getAttribute('href'));
+                        }
+                        if (node.parentNode.nodeName.toLowerCase() === 'span') {
+                            texts = true
+                        }
+                    });
+
+                    // String comparing not working. Some characters incorrectly replaced.
+                    if (!texts && links.length === 1) {
                         prev.setAttribute('parsed-iframely-link', '1');
-                        that.iframely.fetchUrl(m[1], prev);
+                        that.iframely.fetchUrl(links[0], prev);
                     }
                 }
             });
+        },
+
+        walkTheDOM: function(node, func) {
+            func(node);
+            node = node.firstChild;
+            while (node) {
+                this.iframely.walkTheDOM(node, func);
+                node = node.nextSibling;
+            }
         },
 
         fetchUrl: function(uri, node) {
